@@ -16,3 +16,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 ///////////////
 // install eslint
 //npm i eslint vite-plugin-eslint eslint-config-react-app --save-dev
+
+///////
+//installin react router
+//docs ->  https://reactrouter.com/en/main
+//npm i react-router-dom@6
