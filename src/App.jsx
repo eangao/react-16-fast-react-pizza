@@ -37,3 +37,7 @@ export default App;
 //create react project using vite
 //npm create vite@latest  -> for future project
 //npm create vite@4 -> to match in training
+
+///////////////
+// install eslint
+//npm i eslint vite-plugin-eslint eslint-config-react-app --save-dev
