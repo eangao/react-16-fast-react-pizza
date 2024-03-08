@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Form, redirect } from "react-router-dom";
+import { Form, redirect, useActionData, useNavigation } from "react-router-dom";
 import { createOrder } from "../../services/apiRestaurant";
 
 // https://uibakery.io/regex-library/phone-number
@@ -33,6 +33,28 @@ const fakeCart = [
 ];
 
 function CreateOrder() {
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+
+  //   So the component that is wired up with this action,
+  // so this component remember, is connected with this action
+  // because we set so here in this route definition.
+  // {
+  //   path: "/order/new",
+  //   element: <CreateOrder />,
+  //   action: createOrderAction,
+  // },
+  // And so therefore, in this component we can now get access
+  // to the data that is returned from that action.
+  // So it is yet another custom hook
+  // that we are going to need here.
+  // And so let's call the result of this one here formErrors
+  //   But the most common use case of this hook
+  // is to actually do what we are doing right now.
+  // So to return some errors that we can then display right here
+  // in the user interface.
+  const formErrors = useActionData();
+
   // const [withPriority, setWithPriority] = useState(false);
   const cart = fakeCart;
 
@@ -58,6 +80,7 @@ function CreateOrder() {
           <div>
             <input type="tel" name="phone" required />
           </div>
+          {formErrors?.phone && <p>{formErrors.phone}</p>}
         </div>
 
         <div>
@@ -121,7 +144,9 @@ function CreateOrder() {
         And of course the cart also needs to be converted
         back to an object. */}
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <button>Order now</button>
+          <button disabled={isSubmitting}>
+            {isSubmitting ? "Placing order..." : "Order now"}
+          </button>
         </div>
       </Form>
     </div>
@@ -154,6 +179,15 @@ export async function action({ request }) {
     priority: data.priority === "on",
   };
 
+  const errors = {};
+
+  if (!isValidPhone(order.phone))
+    errors.phone =
+      "Please give us your correct phone number. We might need it to contact you.";
+
+  if (Object.keys(errors).length > 0) return errors;
+
+  // if everything is okay, create new order and redirect
   const newOrder = await createOrder(order);
   /////////////////////
   //   createOrder function
