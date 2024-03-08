@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Form } from "react-router-dom";
+import { Form, redirect } from "react-router-dom";
+import { createOrder } from "../../services/apiRestaurant";
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -146,9 +147,52 @@ export async function action({ request }) {
   // So this form data here is provided by the browser.
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
-  console.log(data);
 
-  return null;
+  const order = {
+    ...data,
+    cart: JSON.parse(data.cart),
+    priority: data.priority === "on",
+  };
+
+  const newOrder = await createOrder(order);
+  /////////////////////
+  //   createOrder function
+  // actually returns the newly created object.
+  // So the new order is actually returned.
+  // And so the nice thing about that
+  // is that we can now await that here.
+  // So we can call this here newOrder.
+  // And then what we will want to do
+  // is to immediately redirect the page to the order/ID.
+  // So basically showing the user all the information
+  // about that new order.
+  // So basically what we implemented in the previous lecture.
+  // So let's do that here, but we cannot do it
+  // using the navigate function, because the navigate function
+  // comes from calling the useNavigate hook,
+  // but we cannot call hooks inside this function.
+  // So hooks can only be called inside components.
+  // And so here we need to use another function,
+  // which is called redirect.
+  // So this is basically another function that is provided to us
+  // by React Router, which basically will just create
+  // a new response or a new request.
+  // I'm not really sure, but it's also not so important.
+  // What matters is that behind the scenes,
+  // all of this really works with the web API's
+  // standard request and response API's.
+  // And so if from here we return a new response,
+  // then React Router will automatically go
+  // to the URL that is contained in that new response.
+  // So again, this redirect here will actually create
+  // that response, which we can see right here
+  // in this TypeScript definition.
+
+  // So again, this new order that we get here
+  // is already the new object that is coming back
+  // from the API as a response of calling this function here.
+  // And so this will then already contain the ID,
+  return redirect(`/order/${newOrder.id}`);
 }
 
 export default CreateOrder;
