@@ -13,7 +13,6 @@ function Menu() {
   // { path: "/menu", element: <Menu />, loader: menuLoader },
   // And so that's the data coming from this exact loader here.
   const menu = useLoaderData();
-  console.log(menu);
 
   return (
     <ul>
