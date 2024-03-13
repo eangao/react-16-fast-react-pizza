@@ -63,6 +63,12 @@ export const getTotalCartQuantity = (state) =>
 
 export const getTotalCartPrice = (state) =>
   state.cart.cart.reduce((sum, item) => sum + item.totalPrice, 0);
+
+export const getCurrentQuantityById = (id) => (state) =>
+  state.cart.cart.find((item) => item.pizzaId === id)?.quantity ?? 0;
+//   And so then if this exists,
+// we use optional chaining for that,
+// we get the quantity, and if not, then we return zero.
 ///////////////////////////////////////////////////
 // having these selector functions here like this
 // might actually cause performance issues

@@ -10,6 +10,8 @@ function Cart() {
 
   const cart = useSelector(getCart);
 
+  console.log(cart);
+
   const dispatch = useDispatch();
 
   if (!cart.length) return <EmptyCart />;
