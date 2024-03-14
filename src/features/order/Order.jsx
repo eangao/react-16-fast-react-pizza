@@ -1,16 +1,54 @@
 // Test ID: IIDSAT
 
+import { useFetcher, useLoaderData } from 'react-router-dom';
+
 import OrderItem from './OrderItem';
-import { useLoaderData } from 'react-router-dom';
+
 import { getOrder } from '../../services/apiRestaurant';
 import {
   calcMinutesLeft,
   formatCurrency,
   formatDate,
 } from '../../utils/helpers';
+import { useEffect } from 'react';
 
 function Order() {
   const order = useLoaderData();
+
+  ///////////////////////
+  // sometimes we need to fetch some data from another route,
+  // so basically data that is not associated
+  // with this current page right here,
+  // but we want to do that
+  // without causing a navigation sometimes.
+  // So, for example, let's say that here in the order page,
+  // we wanted to load the menu data again,
+  // and we already wrote all the logic
+  // for fetching exactly that data,
+  // but it is associated to another route.
+  // So, to the menu route and not to this one,
+  // but still we want to use it here,
+  // because there is no point in writing that logic again.
+  // So, in other words, what we want to do
+  // is to use the data from the menu route,
+  // but without the user actually going there.
+  // And, so, for that, we can use the useFetcher hook.
+  const fetcher = useFetcher();
+
+  //   And, so what we want to do is to extend
+  // each of these items here with their ingredients
+  // and so we can get that data from the menu route.
+  // So, what we want to do is,
+  // right after this component mounts
+  // we want to fetch that menu data using our fetcher.
+  // then let's again use our friend use effect.
+  useEffect(
+    function () {
+      console.log(fetcher);
+      if (!fetcher.data && fetcher.state === 'idle') fetcher.load('/menu');
+    },
+    [fetcher],
+  );
 
   // Everyone can search for all orders, so for privacy reasons we're gonna gonna exclude names or address, these are only for the restaurant staff
   const {
@@ -54,7 +92,15 @@ function Order() {
 
       <ul className="divide-y divide-stone-200 border-b border-t">
         {cart.map((item) => (
-          <OrderItem item={item} key={item.pizzaId} />
+          <OrderItem
+            item={item}
+            key={item.pizzaId}
+            isLoadingIngredients={fetcher.state === 'loading'}
+            ingredients={
+              fetcher?.data?.find((el) => el.id === item.pizzaId)
+                ?.ingredients ?? []
+            }
+          />
         ))}
       </ul>
 
