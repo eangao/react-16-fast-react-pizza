@@ -153,7 +153,8 @@ const userSlice = createSlice({
       // So for example, when the user doesn't accept geolocation,
       .addCase(fetchAddress.rejected, (state, action) => {
         state.status = 'error';
-        state.error = action.error.message;
+        state.error =
+          'There was a problem getting your address. Make sure to fill this field!';
       }),
 });
 

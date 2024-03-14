@@ -18,7 +18,16 @@ const isValidPhone = (str) =>
 
 function CreateOrder() {
   const [withPriority, setWithPriority] = useState(false);
-  const username = useSelector((state) => state.user.username);
+  const {
+    username,
+    status: addresStatus,
+    position,
+    address,
+    error: errorAddress,
+  } = useSelector((state) => state.user);
+
+  const isLoadingAddress = addresStatus === 'loading';
+
   const navigation = useNavigation();
   const isSubmitting = navigation.state === 'submitting';
 
@@ -53,8 +62,6 @@ function CreateOrder() {
     <div className="px-4 py-6">
       <h2 className="mb-8 text-xl font-semibold">Ready to order? Let's go!</h2>
 
-      <button onClick={() => dispatch(fetchAddress())}>Get position</button>
-
       {/* to make this form work nicely with React Router, we need to
       replace this with a form component that React Router gives us. */}
 
@@ -86,16 +93,38 @@ function CreateOrder() {
           </div>
         </div>
 
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:basis-40">Address</label>
           <div className="grow">
             <input
               className="input w-full"
               type="text"
               name="address"
+              disabled={isLoadingAddress}
+              defaultValue={address}
               required
             />
+            {addresStatus === 'error' && (
+              <p className="mt-2 rounded-md bg-red-100 p-2 text-xs text-red-700">
+                {errorAddress}
+              </p>
+            )}
           </div>
+
+          {!position.latitude && !position.longtitude && (
+            <span className=" absolute right-[3px] top-[3px] z-50 md:right-[5px] md:top-[5px] ">
+              <Button
+                disabled={isLoadingAddress}
+                type="small"
+                onClick={(e) => {
+                  e.preventDefault();
+                  dispatch(fetchAddress());
+                }}
+              >
+                Get position
+              </Button>
+            </span>
+          )}
         </div>
 
         <div className="mb-12 flex items-center gap-5">
@@ -168,8 +197,32 @@ function CreateOrder() {
         this is actually a bit cleaner than doing that now, right. */}
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
 
+          {/* And then as the last step,
+        we, of course, also need to get this data then
+        here into our form action.
+        So right here in the form action,
+        when we submit the new order,
+        we will also want to submit it
+        with the actual position data,
+        so with the user's GPS location,
+        because that's going to be really important
+        or really helpful for the company
+        to deliver the pizza.
+        And so let's use the same trick that we used here
+        for the cart.
+        So let's do another hidden input field, */}
+          <input
+            type="hidden"
+            name="position"
+            value={
+              position.longitude && position.latitude
+                ? `${position.latitude}, ${position.longitude}`
+                : ''
+            }
+          />
+
           <Button disabled={isSubmitting} type="primary">
-            {isSubmitting
+            {isSubmitting || isLoadingAddress
               ? 'Placing order...'
               : `Order now from ${formatCurrency(totalPrice)}`}
           </Button>
