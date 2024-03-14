@@ -1,7 +1,13 @@
-import { Form, useActionData, useNavigation } from 'react-router-dom';
+import { Form, redirect, useActionData, useNavigation } from 'react-router-dom';
+import { createOrder } from '../../services/apiRestaurant';
 
 import Button from '../../ui/Button';
+import EmptyCart from '../cart/EmptyCart';
 import { useSelector } from 'react-redux';
+import { clearCart, getCart, getTotalCartPrice } from '../cart/cartSlice';
+import store from '../../store';
+import { formatCurrency } from '../../utils/helpers';
+import { useState } from 'react';
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -9,31 +15,8 @@ const isValidPhone = (str) =>
     str,
   );
 
-const fakeCart = [
-  {
-    pizzaId: 12,
-    name: 'Mediterranean',
-    quantity: 2,
-    unitPrice: 16,
-    totalPrice: 32,
-  },
-  {
-    pizzaId: 6,
-    name: 'Vegetale',
-    quantity: 1,
-    unitPrice: 13,
-    totalPrice: 13,
-  },
-  {
-    pizzaId: 11,
-    name: 'Spinach and Mushroom',
-    quantity: 1,
-    unitPrice: 15,
-    totalPrice: 15,
-  },
-];
-
 function CreateOrder() {
+  const [withPriority, setWithPriority] = useState(false);
   const username = useSelector((state) => state.user.username);
   const navigation = useNavigation();
   const isSubmitting = navigation.state === 'submitting';
@@ -57,8 +40,12 @@ function CreateOrder() {
   // in the user interface.
   const formErrors = useActionData();
 
-  // const [withPriority, setWithPriority] = useState(false);
-  const cart = fakeCart;
+  const cart = useSelector(getCart);
+  const totalCartPrice = useSelector(getTotalCartPrice);
+  const priorityPrice = withPriority ? totalCartPrice * 0.2 : 0;
+  const totalPrice = totalCartPrice + priorityPrice;
+
+  if (!cart.length) return <EmptyCart />;
 
   return (
     <div className="px-4 py-6">
@@ -113,8 +100,8 @@ function CreateOrder() {
             type="checkbox"
             name="priority"
             id="priority"
-            // value={withPriority}
-            // onChange={(e) => setWithPriority(e.target.checked)}
+            value={withPriority}
+            onChange={(e) => setWithPriority(e.target.checked)}
           />
           <label htmlFor="priority" className="font-medium">
             Want to yo give your order priority?
@@ -163,9 +150,24 @@ function CreateOrder() {
         and it should be true or false, not just on.
         And of course the cart also needs to be converted
         back to an object. */}
+
+          {/* So let's just recap quickly what we did here before,
+        which was to basically pass that cart here
+        as a hidden field.
+        So we converted this cart to a string,
+        and assign that to the value of this hidden input field.
+        And the reason why we had to do
+        that is because we are not able to get the data
+        from Redux here in this action.
+        I mean, there would actually be a way around this,
+        but like this, even though it's a bit of a hack and a trick,
+        this is actually a bit cleaner than doing that now, right. */}
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
+
           <Button disabled={isSubmitting} type="primary">
-            {isSubmitting ? 'Placing order...' : 'Order now'}
+            {isSubmitting
+              ? 'Placing order...'
+              : `Order now from ${formatCurrency(totalPrice)}`}
           </Button>
         </div>
       </Form>
@@ -196,7 +198,7 @@ export async function action({ request }) {
   const order = {
     ...data,
     cart: JSON.parse(data.cart),
-    priority: data.priority === 'on',
+    priority: data.priority === 'true',
   };
 
   const errors = {};
@@ -208,7 +210,7 @@ export async function action({ request }) {
   if (Object.keys(errors).length > 0) return errors;
 
   // if everything is okay, create new order and redirect
-  // const newOrder = await createOrder(order);
+  const newOrder = await createOrder(order);
   /////////////////////
   //   createOrder function
   // actually returns the newly created object.
@@ -247,9 +249,32 @@ export async function action({ request }) {
   // from the API as a response of calling this function here.
   // And so this will then already contain the ID,
   ////////
-  // return redirect(`/order/${newOrder.id}`);
 
-  return null;
+  ///////////////////////////////////////////
+  //   So usually after you place an order,
+  // then your cart gets automatically emptied out.
+  // And so let's implement that here as well,
+  // even though it is not going to be super easy.
+  // So we will have to use some kind of hack here again
+  // because clearly the dispatching of the clear cart action
+  // will need to happen right here inside this form action.
+  // However, for dispatching,
+  // we need to call the use dispatch hook,
+  // which is only available in components
+  // and not in a regular function like this one.
+  // So the hack that we can use
+  // and which we should really, really not overuse
+  // is to directly import the store object here
+  // into this function and then dispatch directly on that store.
+  //   a bit of a hacky approach
+  // but this is what we have to do in order to make it work.
+  // But really don't overuse this technique
+  // because it deactivates a couple of performance optimizations
+  // of Redux on this page.
+  //DO NOT OVERUSE
+  store.dispatch(clearCart());
+
+  return redirect(`/order/${newOrder.id}`);
 }
 
 export default CreateOrder;
