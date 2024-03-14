@@ -3,11 +3,12 @@ import { createOrder } from '../../services/apiRestaurant';
 
 import Button from '../../ui/Button';
 import EmptyCart from '../cart/EmptyCart';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { clearCart, getCart, getTotalCartPrice } from '../cart/cartSlice';
 import store from '../../store';
 import { formatCurrency } from '../../utils/helpers';
 import { useState } from 'react';
+import { fetchAddress } from '../user/userSlice';
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -39,6 +40,7 @@ function CreateOrder() {
   // So to return some errors that we can then display right here
   // in the user interface.
   const formErrors = useActionData();
+  const dispatch = useDispatch();
 
   const cart = useSelector(getCart);
   const totalCartPrice = useSelector(getTotalCartPrice);
@@ -50,6 +52,8 @@ function CreateOrder() {
   return (
     <div className="px-4 py-6">
       <h2 className="mb-8 text-xl font-semibold">Ready to order? Let's go!</h2>
+
+      <button onClick={() => dispatch(fetchAddress())}>Get position</button>
 
       {/* to make this form work nicely with React Router, we need to
       replace this with a form component that React Router gives us. */}
